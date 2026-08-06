@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import cookieParser from 'cookie-parser';
 import type { Express } from 'express';
 import { AppModule } from './app.module';
 
@@ -11,8 +12,10 @@ async function bootstrap() {
   const httpAdapter = app.getHttpAdapter().getInstance() as Express;
   httpAdapter.set('trust proxy', 1);
 
+  app.use(cookieParser());
+
   app.enableCors({
-    origin: config.get<string>('FRONTEND_ORIGIN') ?? true,
+    origin: config.getOrThrow<string>('FRONTEND_ORIGIN'),
     credentials: true,
   });
 
