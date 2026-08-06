@@ -94,7 +94,14 @@ export class CustomersService {
     await this.findOneOrThrow(tenantId, customerId);
     return this.prisma.customerRecord.update({
       where: { id: customerId },
-      data: dto,
+      data: {
+        ...(dto.name !== undefined && { name: dto.name }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
+        ...(dto.addressText !== undefined && { addressText: dto.addressText }),
+        ...(dto.lat !== undefined && { lat: dto.lat }),
+        ...(dto.lng !== undefined && { lng: dto.lng }),
+        ...(dto.notes !== undefined && { notes: dto.notes }),
+      },
     });
   }
 }
