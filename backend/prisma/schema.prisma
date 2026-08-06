@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String   @id @default(uuid())
+  name            String
+  phone           String   @unique
+  passwordHash    String
+  shortCode       String?  @unique
+  homeAddressText String?
+  homeLat         Float?
+  homeLng         Float?
+  createdAt       DateTime @default(now())
+
+  memberships        Membership[]
+  linkedCustomers    CustomerRecord[] @relation("LinkedUser")
+  cadeteDeliveries   Delivery[]       @relation("CadeteDeliveries")
+  assignedDeliveries Delivery[]       @relation("AssignedByDeliveries")
+  pushSubscriptions  PushSubscription[]
+}
+
+enum Role {
+  ADMIN
+  MOSTRADOR
+  CADETE
+}
+
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  contactInfo String?
+  createdAt   DateTime @default(now())
+
+  memberships     Membership[]
+  customerRecords CustomerRecord[]
+  deliveries      Delivery[]
+}
+
+model Membership {
+  id       String @id @default(uuid())
+  userId   String
+  tenantId String
+  role     Role
+
+  user   User   @relation(fields: [userId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+
+  @@unique([userId, tenantId])
+}
+
+model CustomerRecord {
+  id           String   @id @default(uuid())
+  tenantId     String
+  linkedUserId String?
+  name         String
+  phone        String
+  addressText  String
+  lat          Float
+  lng          Float
+  notes        String   @default("")
+  createdAt    DateTime @default(now())
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id])
+  linkedUser User?      @relation("LinkedUser", fields: [linkedUserId], references: [id])
+  deliveries Delivery[]
+
+  @@index([tenantId, phone])
+}
+
+enum DeliveryStatus {
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+
+model Delivery {
+  id               String         @id @default(uuid())
+  tenantId         String
+  customerRecordId String
+  cadeteUserId     String
+  assignedByUserId String
+  status           DeliveryStatus @default(ASSIGNED)
+  rating           Int?
+  ratingNote       String?
+  createdAt        DateTime       @default(now())
+  completedAt      DateTime?
+
+  tenant         Tenant         @relation(fields: [tenantId], references: [id])
+  customerRecord CustomerRecord @relation(fields: [customerRecordId], references: [id])
+  cadete         User           @relation("CadeteDeliveries", fields: [cadeteUserId], references: [id])
+  assignedBy     User           @relation("AssignedByDeliveries", fields: [assignedByUserId], references: [id])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
