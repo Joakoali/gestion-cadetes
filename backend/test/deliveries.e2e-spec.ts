@@ -339,4 +339,41 @@ describe('Deliveries — create/reassign/cancel (e2e)', () => {
     expect(list.body).toHaveLength(1);
     expect(list.body[0].id).toBe(myDelivery.body.id);
   });
+
+  it('excludes a delivery from the assigned list once it is completed', async () => {
+    const { adminToken, tenantId, customerId } =
+      await setupTenantWithCadeteAndCustomer('+54934354');
+
+    const cadeteToken = await registerAndLogin(app, '+5493999003', 'Cadete');
+    const invite = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Cadete Real', phone: '+5493999003', role: 'CADETE' })
+      .expect(201);
+
+    const delivery = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ customerRecordId: customerId, cadeteUserId: invite.body.userId })
+      .expect(201);
+
+    const beforeComplete = await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/deliveries/mine`)
+      .set('Authorization', `Bearer ${cadeteToken}`)
+      .expect(200);
+    expect(beforeComplete.body).toHaveLength(1);
+    expect(beforeComplete.body[0].id).toBe(delivery.body.id);
+
+    await request(app.getHttpServer())
+      .patch(`/tenants/${tenantId}/deliveries/${delivery.body.id}/complete`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ rating: 5 })
+      .expect(200);
+
+    const afterComplete = await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/deliveries/mine`)
+      .set('Authorization', `Bearer ${cadeteToken}`)
+      .expect(200);
+    expect(afterComplete.body).toEqual([]);
+  });
 });
