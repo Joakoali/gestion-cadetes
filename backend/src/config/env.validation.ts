@@ -4,6 +4,7 @@ const REQUIRED_STRING_VARS = [
   'VAPID_SUBJECT',
   'VAPID_PUBLIC_KEY',
   'VAPID_PRIVATE_KEY',
+  'FRONTEND_ORIGIN',
 ] as const;
 
 export function validate(
