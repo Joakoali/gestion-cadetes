@@ -8,20 +8,22 @@ import { SubscribePushDto } from './dto/subscribe-push.dto';
 @Injectable()
 export class PushService {
   private readonly logger = new Logger(PushService.name);
+  private readonly vapidPublicKey: string;
 
   constructor(
     private readonly prisma: PrismaService,
     config: ConfigService,
   ) {
+    this.vapidPublicKey = config.getOrThrow<string>('VAPID_PUBLIC_KEY');
     webpush.setVapidDetails(
-      config.get<string>('VAPID_SUBJECT')!,
-      config.get<string>('VAPID_PUBLIC_KEY')!,
-      config.get<string>('VAPID_PRIVATE_KEY')!,
+      config.getOrThrow<string>('VAPID_SUBJECT'),
+      this.vapidPublicKey,
+      config.getOrThrow<string>('VAPID_PRIVATE_KEY'),
     );
   }
 
   getPublicKey(): string {
-    return process.env.VAPID_PUBLIC_KEY!;
+    return this.vapidPublicKey;
   }
 
   async subscribe(userId: string, dto: SubscribePushDto) {
