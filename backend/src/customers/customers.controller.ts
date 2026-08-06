@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantMembershipGuard } from '../tenants/guards/tenant-membership.guard';
 import { CustomersService } from './customers.service';
@@ -10,6 +11,7 @@ import { UpdateCustomerDto } from './dto/update-customer.dto';
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post()
   create(@Param('tenantId') tenantId: string, @Body() dto: CreateCustomerDto) {
     return this.customersService.create(tenantId, dto);
