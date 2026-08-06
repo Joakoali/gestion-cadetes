@@ -1,5 +1,12 @@
 node_modules
 # Keep environment variables out of version control
 .env
+.env.test
+
+# Prisma CLI auto-installed skills (development tooling)
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
 
 /generated/prisma
