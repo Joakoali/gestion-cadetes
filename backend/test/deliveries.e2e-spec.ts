@@ -112,4 +112,87 @@ describe('Deliveries — create/reassign/cancel (e2e)', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .expect(400);
   });
+
+  it('rejects a customer that belongs to a different tenant', async () => {
+    const tenantA = await setupTenantWithCadeteAndCustomer('+54934343');
+    const tenantB = await setupTenantWithCadeteAndCustomer('+54934344');
+
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenantA.tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${tenantA.adminToken}`)
+      .send({ customerRecordId: tenantB.customerId, cadeteUserId: tenantA.cadeteUserId })
+      .expect(404);
+  });
+
+  it('rejects a cadete who belongs to a different tenant', async () => {
+    const tenantA = await setupTenantWithCadeteAndCustomer('+54934345');
+    const tenantB = await setupTenantWithCadeteAndCustomer('+54934346');
+
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenantA.tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${tenantA.adminToken}`)
+      .send({ customerRecordId: tenantA.customerId, cadeteUserId: tenantB.cadeteUserId })
+      .expect(400);
+  });
+
+  it('rejects a same-tenant member whose role is not CADETE', async () => {
+    const { adminToken, tenantId, customerId } = await setupTenantWithCadeteAndCustomer('+54934347');
+
+    const mostrador = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Mostrador', phone: '+549343479', role: 'MOSTRADOR' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ customerRecordId: customerId, cadeteUserId: mostrador.body.userId })
+      .expect(400);
+  });
+
+  it('rejects reassigning a delivery that is no longer ASSIGNED', async () => {
+    const { adminToken, tenantId, cadeteUserId, customerId } =
+      await setupTenantWithCadeteAndCustomer('+54934348');
+
+    const invite2 = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Cadete 2', phone: '+549343489', role: 'CADETE' })
+      .expect(201);
+
+    const delivery = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ customerRecordId: customerId, cadeteUserId })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/tenants/${tenantId}/deliveries/${delivery.body.id}/cancel`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .patch(`/tenants/${tenantId}/deliveries/${delivery.body.id}/reassign`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ cadeteUserId: invite2.body.userId })
+      .expect(400);
+  });
+
+  it('rejects reassigning a delivery that belongs to a different tenant', async () => {
+    const tenantA = await setupTenantWithCadeteAndCustomer('+54934349');
+    const tenantB = await setupTenantWithCadeteAndCustomer('+54934350');
+
+    const delivery = await request(app.getHttpServer())
+      .post(`/tenants/${tenantA.tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${tenantA.adminToken}`)
+      .send({ customerRecordId: tenantA.customerId, cadeteUserId: tenantA.cadeteUserId })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .patch(`/tenants/${tenantB.tenantId}/deliveries/${delivery.body.id}/reassign`)
+      .set('Authorization', `Bearer ${tenantB.adminToken}`)
+      .send({ cadeteUserId: tenantB.cadeteUserId })
+      .expect(404);
+  });
 });
