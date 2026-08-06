@@ -113,4 +113,38 @@ describe('Customers (e2e)', () => {
     expect(detail.body.averageRating).toBeNull();
     expect(detail.body.deliveryCount).toBe(0);
   });
+
+  it('rejects cross-tenant access to a customer id even when the caller belongs to the URL tenant', async () => {
+    const tokenA = await registerAndLogin(app, '+549343300005', 'Mostrador A');
+    const tenantAId = await createTenant(app, tokenA);
+
+    const tokenB = await registerAndLogin(app, '+549343300006', 'Mostrador B');
+    const tenantBId = await createTenant(app, tokenB);
+
+    const customerB = await request(app.getHttpServer())
+      .post(`/tenants/${tenantBId}/customers`)
+      .set('Authorization', `Bearer ${tokenB}`)
+      .send({
+        name: 'Cliente B',
+        phone: '+549343399997',
+        addressText: 'Otra calle 1',
+        lat: -31.7,
+        lng: -60.5,
+      })
+      .expect(201);
+
+    // Token A IS a member of tenant A, so TenantMembershipGuard passes — the
+    // 404 below must come from findOneOrThrow's {id, tenantId} scoped query,
+    // not from the route guard rejecting membership.
+    await request(app.getHttpServer())
+      .get(`/tenants/${tenantAId}/customers/${customerB.body.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .expect(404);
+
+    await request(app.getHttpServer())
+      .patch(`/tenants/${tenantAId}/customers/${customerB.body.id}`)
+      .set('Authorization', `Bearer ${tokenA}`)
+      .send({ notes: 'should not update' })
+      .expect(404);
+  });
 });
