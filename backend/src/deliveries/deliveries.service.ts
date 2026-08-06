@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CustomersService } from '../customers/customers.service';
 import { CreateDeliveryDto } from './dto/create-delivery.dto';
 import { ReassignDeliveryDto } from './dto/reassign-delivery.dto';
+import { CompleteDeliveryDto } from './dto/complete-delivery.dto';
 
 @Injectable()
 export class DeliveriesService {
@@ -48,6 +49,27 @@ export class DeliveriesService {
     return this.prisma.delivery.update({
       where: { id: delivery.id },
       data: { status: 'CANCELLED' },
+    });
+  }
+
+  async complete(tenantId: string, deliveryId: string, dto: CompleteDeliveryDto) {
+    const delivery = await this.findAssignedOrThrow(tenantId, deliveryId);
+    return this.prisma.delivery.update({
+      where: { id: delivery.id },
+      data: {
+        status: 'COMPLETED',
+        rating: dto.rating,
+        ratingNote: dto.ratingNote,
+        completedAt: new Date(),
+      },
+    });
+  }
+
+  async listMine(tenantId: string, cadeteUserId: string) {
+    return this.prisma.delivery.findMany({
+      where: { tenantId, cadeteUserId, status: 'ASSIGNED' },
+      include: { customerRecord: true },
+      orderBy: { createdAt: 'asc' },
     });
   }
 
