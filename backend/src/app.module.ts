@@ -8,6 +8,7 @@ import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
 import { CustomersModule } from './customers/customers.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
+import { PushModule } from './push/push.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { DeliveriesModule } from './deliveries/deliveries.module';
     UsersModule,
     CustomersModule,
     DeliveriesModule,
+    PushModule,
   ],
   controllers: [AppController],
 })

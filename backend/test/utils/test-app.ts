@@ -16,6 +16,7 @@ export async function createTestApp(): Promise<INestApplication> {
 
 export async function cleanDb(app: INestApplication): Promise<void> {
   const prisma = app.get(PrismaService);
+  await prisma.pushSubscription.deleteMany();
   await prisma.delivery.deleteMany();
   await prisma.customerRecord.deleteMany();
   await prisma.membership.deleteMany();
