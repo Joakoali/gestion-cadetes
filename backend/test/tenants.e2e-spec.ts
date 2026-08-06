@@ -100,6 +100,25 @@ describe('Tenants (e2e)', () => {
       .expect(403);
   });
 
+  it('rejects a non-member user trying to invite members', async () => {
+    const adminToken = await registerAndLogin(app, '+549343100007');
+    const tenant = await request(app.getHttpServer())
+      .post('/tenants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Rotisería Don José' })
+      .expect(201);
+
+    // Register and login a completely different user who is not a member of this tenant
+    const outsiderToken = await registerAndLogin(app, '+549343100008');
+
+    // Outsider (non-member) tries to invite someone; should be rejected by TenantMembershipGuard
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${outsiderToken}`)
+      .send({ name: 'New User', phone: '+549343100009', role: 'CADETE' })
+      .expect(403);
+  });
+
   it('rejects duplicate member invitations with 409 conflict', async () => {
     const adminToken = await registerAndLogin(app, '+549343100007');
     const tenant = await request(app.getHttpServer())
