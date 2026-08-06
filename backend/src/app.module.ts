@@ -5,9 +5,17 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { TenantsModule } from './tenants/tenants.module';
 import { UsersModule } from './users/users.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true }), PrismaModule, AuthModule, TenantsModule, UsersModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    AuthModule,
+    TenantsModule,
+    UsersModule,
+    CustomersModule,
+  ],
   controllers: [AppController],
 })
 export class AppModule {}
