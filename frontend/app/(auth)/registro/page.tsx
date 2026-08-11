@@ -79,8 +79,7 @@ export default function RegistroPage() {
         </Link>
       </p>
       <p className="text-center text-xs text-muted-foreground">
-        ¿Sos dueño de una rotisería? Creá tu cuenta acá igual — vas a poder dar de alta tu rotisería después de
-        registrarte.
+        ¿Tenés un negocio? Creá tu cuenta acá igual — vas a poder darlo de alta después de registrarte.
       </p>
     </main>
   );

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth/session';
 import { ensureShortCode, updateMyLocation } from '@/lib/api/users';
@@ -75,6 +76,12 @@ export default function PerfilPage() {
         {locationError && <p className="text-sm text-destructive">{locationError}</p>}
         {saved && <p className="text-sm text-muted-foreground">Ubicación guardada.</p>}
       </div>
+
+      <p className="text-center text-sm">
+        <Link href="/crear-negocio" className="underline">
+          ¿Tenés un negocio? Creá tu cuenta acá
+        </Link>
+      </p>
     </main>
   );
 }
