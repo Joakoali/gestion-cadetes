@@ -157,4 +157,41 @@ describe('Auth (e2e)', () => {
       .send({ password: 'whatever123' })
       .expect(404);
   });
+
+  it('rejects reusing a valid reset token a second time (atomic single-use guard)', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ name: 'Ana', phone: '+549343111117', password: 'secret123', email: 'reset2@example.com' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'reset2@example.com' })
+      .expect(201)
+      .expect({ ok: true });
+
+    const fakeMail = app.get(MailService) as any;
+    const resetUrl: string = fakeMail.sent[0].resetUrl;
+    const token = resetUrl.split('/').pop() as string;
+
+    await request(app.getHttpServer())
+      .post(`/auth/reset-password/${token}`)
+      .send({ password: 'firstnewpass' })
+      .expect(201)
+      .expect({ ok: true });
+
+    // Same token, used again: the conditional updateMany inside the
+    // transaction must reject this even though the token row still exists
+    // with a matching id — usedAt is no longer null.
+    await request(app.getHttpServer())
+      .post(`/auth/reset-password/${token}`)
+      .send({ password: 'secondnewpass' })
+      .expect(404);
+
+    // Password from the first (successful) reset is still the active one.
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343111117', password: 'firstnewpass' })
+      .expect(200);
+  });
 });

@@ -119,10 +119,21 @@ export class AuthService {
   async resetPassword(token: string, dto: ResetPasswordDto): Promise<{ ok: true }> {
     const resetToken = await this.findValidResetTokenOrThrow(token);
     const passwordHash = await bcrypt.hash(dto.password, 10);
-    await this.prisma.$transaction([
-      this.prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
-      this.prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
-    ]);
+    await this.prisma.$transaction(async (tx) => {
+      // Conditional update, not update-by-id: the atomic guard against a
+      // check-then-act race where two concurrent resets on the same token
+      // both pass findValidResetTokenOrThrow before either marks it used.
+      // The loser sees count === 0 and fails fast before touching the
+      // user's password.
+      const result = await tx.passwordResetToken.updateMany({
+        where: { id: resetToken.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      if (result.count === 0) {
+        throw new NotFoundException('Invalid or expired reset token');
+      }
+      await tx.user.update({ where: { id: resetToken.userId }, data: { passwordHash } });
+    });
     return { ok: true };
   }
 

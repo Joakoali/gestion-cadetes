@@ -61,13 +61,27 @@ export class InvitesService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const user = await this.prisma.$transaction(async (tx) => {
+      // Conditional update (not a plain update-by-id) so this is the atomic
+      // guard against a check-then-act race: two concurrent accept calls on
+      // the same token could both pass findValidInviteOrThrow before either
+      // marks it used. Whichever transaction wins the update below is the
+      // only one that gets to proceed — the loser sees count === 0 and
+      // fails fast before creating a user/membership for a single-use
+      // invite that was already consumed.
+      const result = await tx.invite.updateMany({
+        where: { id: invite.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      if (result.count === 0) {
+        throw new NotFoundException('Invalid or expired invite');
+      }
+
       const created = await tx.user.create({
         data: { name: dto.name, phone: dto.phone, email: dto.email, passwordHash },
       });
       await tx.membership.create({
         data: { userId: created.id, tenantId: invite.tenantId, role: invite.role },
       });
-      await tx.invite.update({ where: { id: invite.id }, data: { usedAt: new Date() } });
       return created;
     });
 
