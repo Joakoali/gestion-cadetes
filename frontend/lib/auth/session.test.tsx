@@ -60,4 +60,10 @@ describe('useSession', () => {
     renderWithClient();
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('error'));
   });
+
+  it('resolves to "error" (not "anon") when /auth/me fails with something other than a 401', async () => {
+    server.use(http.get('*/auth/me', () => new HttpResponse(null, { status: 500 })));
+    renderWithClient();
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('error'));
+  });
 });

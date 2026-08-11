@@ -24,6 +24,9 @@ export function useSession(): Session {
   if (meQuery.isLoading) {
     return { status: 'loading' };
   }
+  if (meQuery.isError) {
+    return { status: 'error', error: meQuery.error };
+  }
   if (!meQuery.data) {
     return { status: 'anon' };
   }
