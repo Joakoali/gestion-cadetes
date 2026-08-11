@@ -26,10 +26,10 @@ export default function CrearNegocioPage() {
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => createTenant(values.name),
-    onSuccess: async () => {
+    onSuccess: (tenant) => {
       setFormError(null);
-      await queryClient.invalidateQueries({ queryKey: ['tenants', 'mine'] });
-      router.replace('/');
+      queryClient.invalidateQueries({ queryKey: ['tenants', 'mine'] });
+      router.replace(`/clientes?tenantId=${tenant.id}`);
     },
     onError: () => {
       setFormError('Algo salió mal. Intentá de nuevo.');

@@ -19,7 +19,7 @@ function renderPage() {
 }
 
 describe('CrearNegocioPage', () => {
-  it('creates a tenant and redirects home', async () => {
+  it('creates a tenant and redirects straight to its customer list', async () => {
     server.use(
       http.post('*/tenants', () => HttpResponse.json({ id: 't1', name: 'Almacén Don José', contactInfo: null })),
     );
@@ -29,7 +29,7 @@ describe('CrearNegocioPage', () => {
     await user.type(screen.getByLabelText('Nombre del negocio'), 'Almacén Don José');
     await user.click(screen.getByRole('button', { name: /crear negocio/i }));
 
-    await waitFor(() => expect(replace).toHaveBeenCalledWith('/'));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/clientes?tenantId=t1'));
   });
 
   it('shows an error message when tenant creation fails', async () => {
