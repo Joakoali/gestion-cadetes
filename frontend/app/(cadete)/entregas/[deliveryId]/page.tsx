@@ -64,8 +64,24 @@ export default function CadeteDeliveryDetailPage() {
     },
   });
 
-  if (!tenantId || !delivery) {
+  if (!tenantId) {
     return null;
+  }
+
+  if (deliveriesQuery.isError) {
+    return (
+      <main className="mx-auto flex max-w-md flex-col gap-4 p-6">
+        <p className="text-sm text-destructive">No pudimos cargar la entrega. Intentá de nuevo.</p>
+      </main>
+    );
+  }
+
+  if (!delivery) {
+    return (
+      <main className="mx-auto flex max-w-md flex-col gap-4 p-6">
+        <p className="text-sm text-muted-foreground">Entrega no encontrada.</p>
+      </main>
+    );
   }
 
   const pinCoords = coords ?? { lat: delivery.customerRecord.lat, lng: delivery.customerRecord.lng };
