@@ -42,6 +42,7 @@ export class AuthController {
     return this.authService.getProfile(userId);
   }
 
+  @Throttle({ default: { limit: 3, ttl: 3600000 } })
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);

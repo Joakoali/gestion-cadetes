@@ -30,6 +30,19 @@ describe('Rate limiting (e2e)', () => {
     expect(tooMany.length).toBeGreaterThan(0);
   });
 
+  it('blocks repeated forgot-password requests', async () => {
+    const attempts = Array.from({ length: 4 }, () =>
+      request(app.getHttpServer())
+        .post('/auth/forgot-password')
+        .send({ email: 'someone@example.com' }),
+    );
+
+    const results = await Promise.all(attempts);
+    const tooMany = results.filter((r) => r.status === 429);
+
+    expect(tooMany.length).toBeGreaterThan(0);
+  });
+
   it('blocks repeated short-code guesses against a tenant', async () => {
     await request(app.getHttpServer())
       .post('/auth/register')
