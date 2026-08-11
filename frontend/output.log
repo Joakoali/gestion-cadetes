@@ -1,0 +1,8 @@
+﻿node.exe : - Checking registry.
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (- Checking registry.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+√ Checking registry.
