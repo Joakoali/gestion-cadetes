@@ -15,15 +15,19 @@ vi.mock('@/components/location-picker-map', () => ({
     return <div data-testid="map-stub" />;
   },
 }));
-vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn() }) }));
+const replace = vi.fn();
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <PerfilPage />
-    </QueryClientProvider>,
-  );
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <PerfilPage />
+      </QueryClientProvider>,
+    ),
+  };
 }
 
 describe('PerfilPage', () => {
@@ -48,5 +52,25 @@ describe('PerfilPage', () => {
     await user.click(screen.getByRole('button', { name: /guardar ubicación/i }));
 
     await waitFor(() => expect(screen.getByText(/ubicación guardada/i)).toBeInTheDocument());
+  });
+
+  it('logs out, clears the session cache, and redirects to /login', async () => {
+    server.use(
+      http.get('*/auth/me', () =>
+        HttpResponse.json({ id: 'u1', name: 'Carlos', phone: '+5493431112', email: null }),
+      ),
+      http.get('*/tenants', () => HttpResponse.json([])),
+      http.post('*/users/me/short-code', () => HttpResponse.json({ shortCode: 'AB12CD' })),
+      http.post('*/auth/logout', () => HttpResponse.json({ ok: true })),
+    );
+    replace.mockClear();
+    const user = userEvent.setup();
+    const { queryClient } = renderPage();
+
+    expect(await screen.findByText('AB12CD')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /cerrar sesión/i }));
+
+    await waitFor(() => expect(queryClient.getQueryData(['auth', 'me'])).toBeNull());
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/login'));
   });
 });

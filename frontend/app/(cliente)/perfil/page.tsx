@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSession } from '@/lib/auth/session';
 import { ensureShortCode, updateMyLocation } from '@/lib/api/users';
+import { logout } from '@/lib/api/auth';
 import { LocationPicker } from '@/components/location-picker';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,6 +14,8 @@ import { Label } from '@/components/ui/label';
 
 export default function PerfilPage() {
   const session = useSession();
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const shortCodeQuery = useQuery({ queryKey: ['users', 'me', 'short-code'], queryFn: ensureShortCode });
   const [addressText, setAddressText] = useState('');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -26,6 +30,14 @@ export default function PerfilPage() {
     },
     onError: () => {
       setLocationError('Algo salió mal. Intentá de nuevo.');
+    },
+  });
+
+  const logoutMutation = useMutation({
+    mutationFn: logout,
+    onSuccess: () => {
+      queryClient.setQueryData(['auth', 'me'], null);
+      router.replace('/login');
     },
   });
 
@@ -82,6 +94,15 @@ export default function PerfilPage() {
           ¿Tenés un negocio? Creá tu cuenta acá
         </Link>
       </p>
+
+      <Button
+        type="button"
+        variant="outline"
+        disabled={logoutMutation.isPending}
+        onClick={() => logoutMutation.mutate()}
+      >
+        Cerrar sesión
+      </Button>
     </main>
   );
 }
