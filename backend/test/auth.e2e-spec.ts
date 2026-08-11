@@ -1,5 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { MailService } from '../src/mail/mail.service';
 import { createTestApp, cleanDb } from './utils/test-app';
 
 describe('Auth (e2e)', () => {
@@ -100,5 +101,60 @@ describe('Auth (e2e)', () => {
       .post('/auth/register')
       .send({ name: 'Otra', phone: '+549343111115', password: 'secret123', email: 'dup@example.com' })
       .expect(409);
+  });
+
+  it('sends a reset email for a registered email and lets the user set a new password', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/register')
+      .send({ name: 'Ana', phone: '+549343111116', password: 'secret123', email: 'reset@example.com' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'reset@example.com' })
+      .expect(201)
+      .expect({ ok: true });
+
+    const fakeMail = app.get(MailService) as any;
+    expect(fakeMail.sent).toHaveLength(1);
+    const resetUrl: string = fakeMail.sent[0].resetUrl;
+    const token = resetUrl.split('/').pop() as string;
+
+    await request(app.getHttpServer()).get(`/auth/reset-password/${token}`).expect(200).expect({ valid: true });
+
+    await request(app.getHttpServer())
+      .post(`/auth/reset-password/${token}`)
+      .send({ password: 'newpassword456' })
+      .expect(201)
+      .expect({ ok: true });
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343111116', password: 'newpassword456' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343111116', password: 'secret123' })
+      .expect(401);
+  });
+
+  it('returns ok for forgot-password even when the email is not registered', async () => {
+    await request(app.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'nobody@example.com' })
+      .expect(201)
+      .expect({ ok: true });
+
+    const fakeMail = app.get(MailService) as any;
+    expect(fakeMail.sent).toHaveLength(0);
+  });
+
+  it('rejects an already-used or unknown reset token', async () => {
+    await request(app.getHttpServer()).get('/auth/reset-password/does-not-exist').expect(404);
+    await request(app.getHttpServer())
+      .post('/auth/reset-password/does-not-exist')
+      .send({ password: 'whatever123' })
+      .expect(404);
   });
 });

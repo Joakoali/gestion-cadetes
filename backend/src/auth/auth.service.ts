@@ -1,11 +1,16 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { User } from '@prisma/client';
 import type { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
+import { MailService } from '../mail/mail.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 export interface UserProfile {
   id: string;
@@ -16,12 +21,15 @@ export interface UserProfile {
 
 const COOKIE_NAME = 'access_token';
 const COOKIE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000; // 1 hour
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService,
   ) {}
 
   attachSessionCookie(res: Response, accessToken: string): void {
@@ -87,5 +95,42 @@ export class AuthService {
 
   private toProfile(user: User): UserProfile {
     return { id: user.id, name: user.name, phone: user.phone, email: user.email };
+  }
+
+  async forgotPassword(dto: ForgotPasswordDto): Promise<{ ok: true }> {
+    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    if (user) {
+      const token = randomBytes(32).toString('hex');
+      await this.prisma.passwordResetToken.create({
+        data: { userId: user.id, token, expiresAt: new Date(Date.now() + RESET_TOKEN_TTL_MS) },
+      });
+      const frontendOrigin = this.config.getOrThrow<string>('FRONTEND_ORIGIN');
+      const resetUrl = `${frontendOrigin}/reset-password/${token}`;
+      await this.mail.sendPasswordReset(dto.email, resetUrl);
+    }
+    return { ok: true };
+  }
+
+  async validateResetToken(token: string): Promise<{ valid: true }> {
+    await this.findValidResetTokenOrThrow(token);
+    return { valid: true };
+  }
+
+  async resetPassword(token: string, dto: ResetPasswordDto): Promise<{ ok: true }> {
+    const resetToken = await this.findValidResetTokenOrThrow(token);
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    await this.prisma.$transaction([
+      this.prisma.user.update({ where: { id: resetToken.userId }, data: { passwordHash } }),
+      this.prisma.passwordResetToken.update({ where: { id: resetToken.id }, data: { usedAt: new Date() } }),
+    ]);
+    return { ok: true };
+  }
+
+  private async findValidResetTokenOrThrow(token: string) {
+    const resetToken = await this.prisma.passwordResetToken.findUnique({ where: { token } });
+    if (!resetToken || resetToken.usedAt || resetToken.expiresAt < new Date()) {
+      throw new NotFoundException('Invalid or expired reset token');
+    }
+    return resetToken;
   }
 }
