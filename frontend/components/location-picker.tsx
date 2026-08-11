@@ -21,7 +21,10 @@ export function LocationPicker({ lat, lng, onChange }: LocationPickerProps) {
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => onChange({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => {
+        setGeoError(null);
+        onChange({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+      },
       () => setGeoError('No pudimos acceder a tu ubicación. Marcá el pin manualmente en el mapa.'),
     );
   }
