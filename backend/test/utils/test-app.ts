@@ -28,6 +28,7 @@ export async function cleanDb(app: INestApplication): Promise<void> {
   await prisma.passwordResetToken.deleteMany();
   await prisma.delivery.deleteMany();
   await prisma.customerRecord.deleteMany();
+  await prisma.invite.deleteMany();
   await prisma.membership.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();

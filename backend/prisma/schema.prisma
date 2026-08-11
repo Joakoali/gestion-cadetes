@@ -41,6 +41,21 @@ model Tenant {
   memberships     Membership[]
   customerRecords CustomerRecord[]
   deliveries      Delivery[]
+  invites         Invite[]
+}
+
+model Invite {
+  id        String    @id @default(uuid())
+  tenantId  String
+  role      Role
+  label     String?
+  phone     String?
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model Membership {
