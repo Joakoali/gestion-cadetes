@@ -60,7 +60,7 @@ export class TenantsService {
   async listMembers(tenantId: string) {
     const memberships = await this.prisma.membership.findMany({
       where: { tenantId },
-      include: { user: true },
+      include: { user: { select: { id: true, name: true, phone: true } } },
       orderBy: { user: { name: 'asc' } },
     });
     return memberships.map((m) => ({ userId: m.userId, name: m.user.name, phone: m.user.phone, role: m.role }));

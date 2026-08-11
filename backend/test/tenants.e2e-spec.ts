@@ -163,6 +163,11 @@ describe('Tenants (e2e)', () => {
 
     expect(members.body).toHaveLength(2);
     expect(members.body.map((m: { role: string }) => m.role).sort()).toEqual(['ADMIN', 'CADETE']);
+    // Assert that sensitive fields are not present in the response
+    expect(members.body[0]).not.toHaveProperty('passwordHash');
+    members.body.forEach((member: any) => {
+      expect(Object.keys(member).sort()).toEqual(['name', 'phone', 'role', 'userId'].sort());
+    });
   });
 
   it('rejects a cadete trying to list members', async () => {
@@ -187,5 +192,34 @@ describe('Tenants (e2e)', () => {
       .get(`/tenants/${tenant.body.id}/members`)
       .set('Authorization', `Bearer ${cadeteLogin.body.accessToken}`)
       .expect(403);
+  });
+
+  it('allows a mostrador-role member to list tenant members', async () => {
+    const adminToken = await registerAndLogin(app, '+549343700005');
+    const tenant = await request(app.getHttpServer())
+      .post('/tenants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Rotisería Don José' })
+      .expect(201);
+
+    const invite = await request(app.getHttpServer())
+      .post(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Mostrador Juan', phone: '+549343700006', role: 'MOSTRADOR' })
+      .expect(201);
+    const mostradorLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343700006', password: invite.body.temporaryPassword })
+      .expect(200);
+
+    const members = await request(app.getHttpServer())
+      .get(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${mostradorLogin.body.accessToken}`)
+      .expect(200);
+
+    expect(members.body).toHaveLength(2);
+    expect(members.body.map((m: { role: string }) => m.role).sort()).toEqual(['ADMIN', 'MOSTRADOR']);
+    // Verify no sensitive fields in response
+    expect(members.body[0]).not.toHaveProperty('passwordHash');
   });
 });
