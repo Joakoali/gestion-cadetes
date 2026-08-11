@@ -36,3 +36,14 @@ export function createInvite(tenantId: string, payload: CreateInvitePayload) {
     { method: 'POST', body: JSON.stringify(payload) },
   );
 }
+
+export interface PendingInvite {
+  id: string;
+  role: Role;
+  label: string | null;
+  expiresAt: string;
+}
+
+export function listPendingInvites(tenantId: string): Promise<PendingInvite[]> {
+  return apiFetch<PendingInvite[]>(`/tenants/${tenantId}/invites`);
+}
