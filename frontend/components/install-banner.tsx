@@ -19,7 +19,7 @@ function detectPlatform(): 'ios' | 'android' | 'other' {
 }
 
 export function InstallBanner() {
-  const [installed, setInstalled] = useState(true);
+  const [installed, setInstalled] = useState<boolean | null>(null);
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -27,17 +27,21 @@ export function InstallBanner() {
   }, []);
 
   useEffect(() => {
-    if (!installed) {
+    if (installed !== true) {
       return;
     }
-    requestNotificationPermission().then((permission) => {
-      if (permission === 'granted') {
-        subscribeToPush();
-      }
-    });
+    requestNotificationPermission()
+      .then((permission) => {
+        if (permission === 'granted') {
+          subscribeToPush();
+        }
+      })
+      .catch(() => {
+        // best-effort background enhancement, no user-facing UI needed
+      });
   }, [installed]);
 
-  if (installed || dismissed) {
+  if (installed === null || installed || dismissed) {
     return null;
   }
 
