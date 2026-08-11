@@ -73,6 +73,17 @@ export class DeliveriesService {
     });
   }
 
+  async listForTenant(tenantId: string, status?: 'ASSIGNED' | 'COMPLETED' | 'CANCELLED') {
+    return this.prisma.delivery.findMany({
+      where: { tenantId, status: status ?? 'ASSIGNED' },
+      include: {
+        customerRecord: true,
+        cadete: { select: { id: true, name: true, phone: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
   async findAssignedOrThrow(tenantId: string, deliveryId: string) {
     const delivery = await this.prisma.delivery.findFirst({
       where: { id: deliveryId, tenantId },

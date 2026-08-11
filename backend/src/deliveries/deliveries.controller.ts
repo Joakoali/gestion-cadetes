@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { TenantMembershipGuard } from '../tenants/guards/tenant-membership.guard';
@@ -22,6 +22,12 @@ export class DeliveriesController {
     @Body() dto: CreateDeliveryDto,
   ) {
     return this.deliveriesService.create(tenantId, userId, dto);
+  }
+
+  @Get()
+  @Roles('ADMIN', 'MOSTRADOR')
+  listForTenant(@Param('tenantId') tenantId: string, @Query('status') status?: 'ASSIGNED' | 'COMPLETED' | 'CANCELLED') {
+    return this.deliveriesService.listForTenant(tenantId, status);
   }
 
   @Get('mine')
