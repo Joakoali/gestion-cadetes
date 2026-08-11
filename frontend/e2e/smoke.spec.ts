@@ -21,7 +21,9 @@ test('mostrador creates a customer, assigns it, cadete completes it, rating refl
   await mostradorPage.goto('/registro');
   await mostradorPage.getByLabel('Nombre').fill('Ana Mostrador');
   await mostradorPage.getByLabel('Teléfono').fill(uniquePhone('1'));
-  await mostradorPage.getByLabel('Contraseña').fill('secret123');
+  // exact: true -- "Contraseña" is otherwise a substring match of the
+  // page's "Email (opcional, para recuperar tu contraseña)" label too.
+  await mostradorPage.getByLabel('Contraseña', { exact: true }).fill('secret123');
   await mostradorPage.getByRole('button', { name: /crear cuenta/i }).click();
 
   await mostradorPage.waitForURL('**/perfil');
@@ -42,7 +44,7 @@ test('mostrador creates a customer, assigns it, cadete completes it, rating refl
   await cadetePage.goto(inviteUrl.replace('http://localhost:3000', ''));
   await cadetePage.getByLabel('Nombre').fill('Juan Cadete');
   await cadetePage.getByLabel('Teléfono').fill(uniquePhone('2'));
-  await cadetePage.getByLabel('Contraseña').fill('secret123');
+  await cadetePage.getByLabel('Contraseña', { exact: true }).fill('secret123');
   await cadetePage.getByRole('button', { name: /crear cuenta/i }).click();
   await cadetePage.waitForURL('**/entregas?tenantId=*');
   await expect(cadetePage.getByText(/no tenés entregas asignadas/i)).toBeVisible();
