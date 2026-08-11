@@ -68,6 +68,10 @@ export default function CadeteDeliveryDetailPage() {
     return null;
   }
 
+  if (deliveriesQuery.isLoading) {
+    return null;
+  }
+
   if (deliveriesQuery.isError) {
     return (
       <main className="mx-auto flex max-w-md flex-col gap-4 p-6">
