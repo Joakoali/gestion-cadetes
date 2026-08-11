@@ -27,7 +27,11 @@ export class DeliveriesService {
       },
     });
 
-    this.events.emit('delivery.assigned', { deliveryId: delivery.id, cadeteUserId: delivery.cadeteUserId });
+    this.events.emit('delivery.assigned', {
+      deliveryId: delivery.id,
+      cadeteUserId: delivery.cadeteUserId,
+      tenantId,
+    });
     return delivery;
   }
 
@@ -40,7 +44,11 @@ export class DeliveriesService {
       data: { cadeteUserId: dto.cadeteUserId },
     });
 
-    this.events.emit('delivery.assigned', { deliveryId: updated.id, cadeteUserId: updated.cadeteUserId });
+    this.events.emit('delivery.assigned', {
+      deliveryId: updated.id,
+      cadeteUserId: updated.cadeteUserId,
+      tenantId,
+    });
     return updated;
   }
 
