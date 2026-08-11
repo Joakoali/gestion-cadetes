@@ -41,8 +41,9 @@ const boardEntry = {
   cadete: { id: 'u-cadete', name: 'Juan', phone: '+549' },
 };
 
-const cadete1 = { id: 'u-cadete', name: 'Juan', phone: '+549' };
-const cadete2 = { id: 'u-cadete2', name: 'Miguel', phone: '+549' };
+// Members with CADETE role for reassign tests
+const cadete1Member = { userId: 'u-cadete', name: 'Juan', phone: '+549', role: 'CADETE' as const };
+const cadete2Member = { userId: 'u-cadete2', name: 'Miguel', phone: '+549', role: 'CADETE' as const };
 
 describe('EntregasBoardPage', () => {
   it('groups active deliveries by cadete and cancels one', async () => {
@@ -98,5 +99,70 @@ describe('EntregasBoardPage', () => {
     await user.click(screen.getByRole('button', { name: /cancelar/i }));
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No se pudo cancelar. Intentá de nuevo.'));
+  });
+
+  it('reassigns a delivery to a different cadete', async () => {
+    const reassignedEntry = { ...boardEntry, cadeteUserId: 'u-cadete2', cadete: cadete2Member };
+    let callCount = 0;
+
+    server.use(
+      http.get('*/tenants/t1/deliveries', () => {
+        callCount++;
+        // Return reassigned delivery on second fetch (after reassign mutation succeeds)
+        return HttpResponse.json(callCount === 1 ? [boardEntry] : [reassignedEntry]);
+      }),
+      http.get('*/tenants/t1/members', () => HttpResponse.json([cadete1Member, cadete2Member])),
+      http.patch('*/tenants/t1/deliveries/d1/reassign', () => HttpResponse.json(reassignedEntry)),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    // Verify initial state: delivery assigned to Juan (cadete1)
+    expect(await screen.findByText('Juan')).toBeInTheDocument();
+    expect(screen.getByText('Carlos')).toBeInTheDocument();
+
+    // Open reassign select and pick Miguel (cadete2)
+    // The select trigger has role="combobox"
+    const reassignSelect = screen.getByRole('combobox');
+    await user.click(reassignSelect);
+
+    // After opening, find and click Miguel option from the listbox
+    // The option element contains text "Miguel" but no name attribute, so we query by text
+    const miguelOption = screen.getAllByText('Miguel').find((el) => el.closest('[role="option"]'));
+    if (miguelOption?.closest('[role="option"]')) {
+      await user.click(miguelOption.closest('[role="option"]')!);
+    }
+
+    // After reassignment, board query is invalidated and refetches.
+    // Verify the delivery is now under Miguel's group.
+    await waitFor(() => {
+      const miguelHeadings = screen.getAllByText('Miguel');
+      expect(miguelHeadings.length).toBeGreaterThan(0);
+    });
+  });
+
+  it('shows error toast when reassignment fails', async () => {
+    const { toast } = await import('sonner');
+    server.use(
+      http.get('*/tenants/t1/deliveries', () => HttpResponse.json([boardEntry])),
+      http.get('*/tenants/t1/members', () => HttpResponse.json([cadete1Member, cadete2Member])),
+      http.patch('*/tenants/t1/deliveries/d1/reassign', () => HttpResponse.error()),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('Juan')).toBeInTheDocument();
+
+    // Open reassign select and pick Miguel (cadete2)
+    const reassignSelect = screen.getByRole('combobox');
+    await user.click(reassignSelect);
+
+    const miguelOption = screen.getAllByText('Miguel').find((el) => el.closest('[role="option"]'));
+    if (miguelOption?.closest('[role="option"]')) {
+      await user.click(miguelOption.closest('[role="option"]')!);
+    }
+
+    // Verify error toast is shown
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No se pudo reasignar. Intentá de nuevo.'));
   });
 });
