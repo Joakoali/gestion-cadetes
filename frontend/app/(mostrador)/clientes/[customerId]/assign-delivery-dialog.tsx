@@ -46,6 +46,9 @@ export function AssignDeliveryDialog({ tenantId, customerId, open, onOpenChange 
         <DialogHeader>
           <DialogTitle>Asignar entrega</DialogTitle>
         </DialogHeader>
+        {membersQuery.isError && (
+          <p className="text-sm text-destructive">No pudimos cargar los cadetes. Intentá de nuevo.</p>
+        )}
         <Select value={cadeteUserId || ''} onValueChange={(value) => setCadeteUserId(value || '')}>
           <SelectTrigger>
             <SelectValue placeholder="Elegí un cadete" />
