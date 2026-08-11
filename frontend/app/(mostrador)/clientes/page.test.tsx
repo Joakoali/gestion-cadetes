@@ -38,11 +38,14 @@ describe('ClientesPage', () => {
 
   it('creates a customer manually and navigates to its detail page', async () => {
     // Mock geolocation to return coordinates
-    global.navigator.geolocation = {
-      getCurrentPosition: (success: any) => {
-        success({ coords: { latitude: -31.7, longitude: -60.5 } });
+    Object.defineProperty(global.navigator, 'geolocation', {
+      value: {
+        getCurrentPosition: (success: any) => {
+          success({ coords: { latitude: -31.7, longitude: -60.5 } });
+        },
       },
-    } as any;
+      configurable: true,
+    });
 
     server.use(
       http.get('*/tenants/t1/customers', () => HttpResponse.json([])),
