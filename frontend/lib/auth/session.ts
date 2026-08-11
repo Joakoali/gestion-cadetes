@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { getMe, UserProfile } from '../api/auth';
 import { getMyMemberships, Membership } from '../api/tenants';
 
-export type SessionStatus = 'loading' | 'anon' | 'client' | 'staff';
+export type SessionStatus = 'loading' | 'anon' | 'client' | 'staff' | 'error';
 
 export interface Session {
   status: SessionStatus;
   user?: UserProfile;
   memberships?: Membership[];
+  error?: Error;
 }
 
 export function useSession(): Session {
@@ -25,6 +26,9 @@ export function useSession(): Session {
   }
   if (!meQuery.data) {
     return { status: 'anon' };
+  }
+  if (membershipsQuery.isError) {
+    return { status: 'error', user: meQuery.data, error: membershipsQuery.error };
   }
   if (membershipsQuery.isLoading || !membershipsQuery.data) {
     return { status: 'loading', user: meQuery.data };

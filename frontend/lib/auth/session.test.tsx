@@ -49,4 +49,15 @@ describe('useSession', () => {
     renderWithClient();
     await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('anon'));
   });
+
+  it('resolves to "error" when /tenants call fails', async () => {
+    server.use(
+      http.get('*/auth/me', () =>
+        HttpResponse.json({ id: 'u1', name: 'Ana', phone: '+549', email: null }),
+      ),
+      http.get('*/tenants', () => new HttpResponse(null, { status: 500 })),
+    );
+    renderWithClient();
+    await waitFor(() => expect(screen.getByTestId('status')).toHaveTextContent('error'));
+  });
 });

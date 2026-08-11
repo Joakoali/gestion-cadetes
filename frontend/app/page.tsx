@@ -13,6 +13,8 @@ export default function RootPage() {
       router.replace('/login');
     } else if (session.status === 'client') {
       router.replace('/perfil');
+    } else if (session.status === 'error') {
+      router.replace('/error');
     } else if (session.status === 'staff' && session.memberships) {
       if (session.memberships.length === 1) {
         const membership = session.memberships[0];
