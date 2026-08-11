@@ -35,3 +35,21 @@ export function register(name: string, phone: string, password: string, email?: 
 export function logout() {
   return apiFetch<{ ok: true }>('/auth/logout', { method: 'POST' });
 }
+
+export function forgotPassword(email: string) {
+  return apiFetch<{ ok: true }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function validateResetToken(token: string) {
+  return apiFetch<{ valid: true }>(`/auth/reset-password/${token}`);
+}
+
+export function resetPassword(token: string, password: string) {
+  return apiFetch<{ ok: true }>(`/auth/reset-password/${token}`, {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  });
+}
