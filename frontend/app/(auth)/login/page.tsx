@@ -31,8 +31,8 @@ export default function LoginPage() {
 
   const mutation = useMutation({
     mutationFn: (values: FormValues) => login(values.phone, values.password),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    onSuccess: (res) => {
+      queryClient.setQueryData(['auth', 'me'], res.user);
       router.replace('/');
     },
     onError: (err) => {

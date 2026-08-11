@@ -34,8 +34,8 @@ export default function InvitePage() {
   const mutation = useMutation({
     mutationFn: (values: FormValues) =>
       acceptInvite(token, { ...values, email: values.email || undefined }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    onSuccess: (res) => {
+      queryClient.setQueryData(['auth', 'me'], res.user);
       router.replace('/');
     },
     onError: () => setErrorMessage('Algo salió mal. Intentá de nuevo.'),
