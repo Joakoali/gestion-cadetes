@@ -19,7 +19,7 @@ export default function RootPage() {
         const landingPath = membership.role === 'CADETE' ? '/entregas' : '/clientes';
         router.replace(`${landingPath}?tenantId=${membership.tenantId}`);
       } else {
-        router.replace('/seleccionar-rotiseria');
+        router.replace('/seleccionar-negocio');
       }
     }
   }, [session, router]);
