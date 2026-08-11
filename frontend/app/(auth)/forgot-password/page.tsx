@@ -15,6 +15,7 @@ type FormValues = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -24,6 +25,7 @@ export default function ForgotPasswordPage() {
   const mutation = useMutation({
     mutationFn: (values: FormValues) => forgotPassword(values.email),
     onSuccess: () => setSubmitted(true),
+    onError: () => setErrorMessage('Algo salió mal. Intentá de nuevo.'),
   });
 
   if (submitted) {
@@ -43,6 +45,7 @@ export default function ForgotPasswordPage() {
           <Input id="email" type="email" {...register('email')} />
           {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
         </div>
+        {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
         <Button type="submit" disabled={mutation.isPending}>
           {mutation.isPending ? 'Enviando…' : 'Enviar'}
         </Button>

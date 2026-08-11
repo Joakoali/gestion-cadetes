@@ -28,4 +28,15 @@ describe('ForgotPasswordPage', () => {
       await screen.findByText(/si el email existe, te llega un link para recuperar tu contraseña/i),
     ).toBeInTheDocument();
   });
+
+  it('shows an error message when the mutation fails', async () => {
+    server.use(http.post('*/auth/forgot-password', () => new HttpResponse(null, { status: 500 })));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.type(screen.getByLabelText('Email'), 'test@example.com');
+    await user.click(screen.getByRole('button', { name: /enviar/i }));
+
+    expect(await screen.findByText(/algo salió mal\. intentá de nuevo\./i)).toBeInTheDocument();
+  });
 });

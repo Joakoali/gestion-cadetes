@@ -43,4 +43,19 @@ describe('ResetPasswordPage', () => {
 
     expect(await screen.findByText(/este link venció o ya fue usado/i)).toBeInTheDocument();
   });
+
+  it('shows an error message when the password reset mutation fails', async () => {
+    server.use(
+      http.get('*/auth/reset-password/valid-token', () => HttpResponse.json({ valid: true })),
+      http.post('*/auth/reset-password/valid-token', () => new HttpResponse(null, { status: 500 })),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    const passwordInput = await screen.findByLabelText('Nueva contraseña');
+    await user.type(passwordInput, 'newpassword456');
+    await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+    expect(await screen.findByText(/algo salió mal\. intentá de nuevo\./i)).toBeInTheDocument();
+  });
 });
