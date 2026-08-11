@@ -127,17 +127,18 @@ describe('EntregasBoardPage', () => {
     await user.click(reassignSelect);
 
     // After opening, find and click Miguel option from the listbox
-    // The option element contains text "Miguel" but no name attribute, so we query by text
+    // The option element contains text "Miguel" but no name attribute, so we query by text.
+    // No guard here on purpose: if the option isn't found, this should throw and fail
+    // the test loudly rather than silently skip the click.
     const miguelOption = screen.getAllByText('Miguel').find((el) => el.closest('[role="option"]'));
-    if (miguelOption?.closest('[role="option"]')) {
-      await user.click(miguelOption.closest('[role="option"]')!);
-    }
+    await user.click(miguelOption!.closest('[role="option"]')!);
 
     // After reassignment, board query is invalidated and refetches.
-    // Verify the delivery is now under Miguel's group.
+    // Verify the delivery is now under Miguel's group — a heading query is
+    // specific to the reassignment result and won't match an unselected
+    // dropdown option that also renders the text "Miguel".
     await waitFor(() => {
-      const miguelHeadings = screen.getAllByText('Miguel');
-      expect(miguelHeadings.length).toBeGreaterThan(0);
+      expect(screen.getByRole('heading', { name: 'Miguel' })).toBeInTheDocument();
     });
   });
 
@@ -158,9 +159,7 @@ describe('EntregasBoardPage', () => {
     await user.click(reassignSelect);
 
     const miguelOption = screen.getAllByText('Miguel').find((el) => el.closest('[role="option"]'));
-    if (miguelOption?.closest('[role="option"]')) {
-      await user.click(miguelOption.closest('[role="option"]')!);
-    }
+    await user.click(miguelOption!.closest('[role="option"]')!);
 
     // Verify error toast is shown
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('No se pudo reasignar. Intentá de nuevo.'));
