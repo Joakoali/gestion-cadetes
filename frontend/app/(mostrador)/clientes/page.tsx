@@ -35,6 +35,9 @@ export default function ClientesPage() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
       />
+      {customersQuery.isError && (
+        <p className="text-sm text-destructive">No pudimos cargar los clientes. Intentá de nuevo.</p>
+      )}
       <ul className="flex flex-col gap-2">
         {customersQuery.data?.map((customer) => (
           <li key={customer.id}>

@@ -58,4 +58,35 @@ describe('CustomerDetailPage', () => {
 
     await waitFor(() => expect(screen.getByText(/cambios guardados/i)).toBeInTheDocument());
   });
+
+  it('shows error message when updating customer fails', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers/c1', () => HttpResponse.json(baseCustomer)),
+      http.patch('*/tenants/t1/customers/c1', () =>
+        HttpResponse.error(),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('Carlos')).toBeInTheDocument();
+
+    const notesField = screen.getByLabelText('Notas');
+    await user.clear(notesField);
+    await user.type(notesField, 'perro suelto');
+    await user.click(screen.getByRole('button', { name: /guardar notas/i }));
+
+    await waitFor(() => expect(screen.getByText('Algo salió mal. Intentá de nuevo.')).toBeInTheDocument());
+  });
+
+  it('shows error message when customer query fails', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers/c1', () =>
+        HttpResponse.error(),
+      ),
+    );
+    renderPage();
+
+    expect(await screen.findByText('No pudimos cargar el cliente.')).toBeInTheDocument();
+  });
 });

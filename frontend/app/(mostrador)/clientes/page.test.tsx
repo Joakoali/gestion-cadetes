@@ -63,4 +63,58 @@ describe('ClientesPage', () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/clientes/c2?tenantId=t1'));
   });
+
+  it('creates a customer via shortcode and navigates to its detail page', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers', () => HttpResponse.json([])),
+      http.post('*/tenants/t1/customers', () =>
+        HttpResponse.json({ id: 'c3', name: 'Juan Linked', phone: '+549343399999', tenantId: 't1', linkedUserId: 'user123', addressText: 'Balcarce 1000', lat: -31.7, lng: -60.5, notes: 'preexisting notes', createdAt: '' }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(screen.getByRole('button', { name: /nuevo cliente/i }));
+    // "Por código" should be the default mode
+    await user.type(screen.getByLabelText('Código del cliente'), 'JUAN123');
+    await user.click(screen.getByRole('button', { name: /guardar cliente/i }));
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/clientes/c3?tenantId=t1'));
+  });
+
+  it('updates search query when typing in the search box', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers', ({ request }) => {
+        const url = new URL(request.url);
+        const q = url.searchParams.get('q') || '';
+        const mockData: { [key: string]: any[] } = {
+          '': [{ id: 'c1', name: 'Carlos', phone: '+549', tenantId: 't1', linkedUserId: null, addressText: '', lat: 0, lng: 0, notes: '', createdAt: '' }],
+          'car': [{ id: 'c1', name: 'Carlos', phone: '+549', tenantId: 't1', linkedUserId: null, addressText: '', lat: 0, lng: 0, notes: '', createdAt: '' }],
+          'juan': [{ id: 'c4', name: 'Juan', phone: '+549343399999', tenantId: 't1', linkedUserId: null, addressText: '', lat: 0, lng: 0, notes: '', createdAt: '' }],
+        };
+        return HttpResponse.json(mockData[q] || []);
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('Carlos')).toBeInTheDocument();
+
+    const searchInput = screen.getByPlaceholderText('Buscar por teléfono, nombre o código');
+    await user.type(searchInput, 'juan');
+
+    await waitFor(() => expect(screen.queryByText('Carlos')).not.toBeInTheDocument());
+    expect(await screen.findByText('Juan')).toBeInTheDocument();
+  });
+
+  it('shows error message when customers query fails', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers', () =>
+        HttpResponse.error(),
+      ),
+    );
+    renderPage();
+
+    expect(await screen.findByText('No pudimos cargar los clientes. Intentá de nuevo.')).toBeInTheDocument();
+  });
 });

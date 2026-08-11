@@ -22,6 +22,7 @@ export default function CustomerDetailPage() {
   const [notes, setNotes] = useState('');
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (customerQuery.data) {
@@ -34,12 +35,32 @@ export default function CustomerDetailPage() {
     mutationFn: () =>
       updateCustomer(tenantId as string, customerId, { notes, lat: coords?.lat, lng: coords?.lng }),
     onSuccess: async () => {
+      setError(null);
       await queryClient.invalidateQueries({ queryKey: ['customers', tenantId, customerId] });
       setSaved(true);
     },
+    onError: () => {
+      setError('Algo salió mal. Intentá de nuevo.');
+    },
   });
 
-  if (!tenantId || !customerQuery.data) {
+  if (!tenantId) {
+    return null;
+  }
+
+  if (customerQuery.isLoading) {
+    return null;
+  }
+
+  if (customerQuery.isError) {
+    return (
+      <main className="mx-auto flex max-w-md flex-col gap-4 p-6">
+        <p className="text-sm text-destructive">No pudimos cargar el cliente.</p>
+      </main>
+    );
+  }
+
+  if (!customerQuery.data) {
     return null;
   }
 
@@ -74,6 +95,7 @@ export default function CustomerDetailPage() {
       <Button type="button" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
         {mutation.isPending ? 'Guardando…' : 'Guardar notas'}
       </Button>
+      {error && <p className="text-sm text-destructive">{error}</p>}
       {saved && <p className="text-sm text-muted-foreground">Cambios guardados.</p>}
     </main>
   );
