@@ -9,3 +9,8 @@ afterEach(() => {
   server.resetHandlers();
 });
 afterAll(() => server.close());
+
+// Radix Select/Popover use these during pointer interactions; jsdom has no implementation.
+window.HTMLElement.prototype.scrollIntoView ??= () => {};
+window.HTMLElement.prototype.hasPointerCapture ??= () => false;
+window.HTMLElement.prototype.releasePointerCapture ??= () => {};

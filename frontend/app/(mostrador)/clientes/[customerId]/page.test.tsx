@@ -89,4 +89,40 @@ describe('CustomerDetailPage', () => {
 
     expect(await screen.findByText('No pudimos cargar el cliente.')).toBeInTheDocument();
   });
+
+  it('assigns a delivery to a cadete from the customer detail page', async () => {
+    server.use(
+      http.get('*/tenants/t1/customers/c1', () => HttpResponse.json(baseCustomer)),
+      http.get('*/tenants/t1/members', () =>
+        HttpResponse.json([
+          { userId: 'u-cadete', name: 'Juan', phone: '+549', role: 'CADETE' },
+          { userId: 'u-mostrador', name: 'Ana', phone: '+549', role: 'MOSTRADOR' },
+        ]),
+      ),
+      http.post('*/tenants/t1/deliveries', () =>
+        HttpResponse.json({
+          id: 'd1',
+          tenantId: 't1',
+          customerRecordId: 'c1',
+          cadeteUserId: 'u-cadete',
+          assignedByUserId: 'u-mostrador',
+          status: 'ASSIGNED',
+          rating: null,
+          ratingNote: null,
+          createdAt: '',
+          completedAt: null,
+        }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    expect(await screen.findByText('Carlos')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /asignar entrega/i }));
+    await user.click(screen.getByRole('combobox'));
+    await user.click(await screen.findByText('Juan'));
+    await user.click(screen.getByRole('button', { name: /^asignar$/i }));
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
 });

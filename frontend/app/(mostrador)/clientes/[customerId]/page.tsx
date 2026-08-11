@@ -8,6 +8,7 @@ import { getCustomer, updateCustomer } from '@/lib/api/customers';
 import { LocationPicker } from '@/components/location-picker';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { AssignDeliveryDialog } from './assign-delivery-dialog';
 
 export default function CustomerDetailPage() {
   const tenantId = useTenantId();
@@ -23,6 +24,7 @@ export default function CustomerDetailPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
 
   useEffect(() => {
     if (customerQuery.data) {
@@ -82,6 +84,16 @@ export default function CustomerDetailPage() {
           Entregas: <strong>{customer.deliveryCount}</strong>
         </p>
       </div>
+
+      <Button type="button" variant="outline" onClick={() => setAssignOpen(true)}>
+        Asignar entrega
+      </Button>
+      <AssignDeliveryDialog
+        tenantId={tenantId}
+        customerId={customerId}
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+      />
 
       <LocationPicker lat={coords?.lat ?? null} lng={coords?.lng ?? null} onChange={setCoords} />
 
