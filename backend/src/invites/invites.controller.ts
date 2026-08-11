@@ -38,4 +38,11 @@ export class InvitesController {
     this.authService.attachSessionCookie(res, result.accessToken);
     return result;
   }
+
+  @Get('tenants/:tenantId/invites')
+  @UseGuards(JwtAuthGuard, TenantMembershipGuard, RolesGuard)
+  @Roles('ADMIN')
+  listPending(@Param('tenantId') tenantId: string) {
+    return this.invitesService.listPending(tenantId);
+  }
 }

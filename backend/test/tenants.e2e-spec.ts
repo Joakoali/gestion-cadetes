@@ -141,4 +141,51 @@ describe('Tenants (e2e)', () => {
       .send({ name: 'Member', phone: '+549343100008', role: 'CADETE' })
       .expect(409);
   });
+
+  it('lists all members of a tenant with their roles', async () => {
+    const adminToken = await registerAndLogin(app, '+549343700001');
+    const tenant = await request(app.getHttpServer())
+      .post('/tenants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Rotisería Don José' })
+      .expect(201);
+
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Cadete Juan', phone: '+549343700002', role: 'CADETE' })
+      .expect(201);
+
+    const members = await request(app.getHttpServer())
+      .get(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(members.body).toHaveLength(2);
+    expect(members.body.map((m: { role: string }) => m.role).sort()).toEqual(['ADMIN', 'CADETE']);
+  });
+
+  it('rejects a cadete trying to list members', async () => {
+    const adminToken = await registerAndLogin(app, '+549343700003');
+    const tenant = await request(app.getHttpServer())
+      .post('/tenants')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Rotisería Don José' })
+      .expect(201);
+
+    const invite = await request(app.getHttpServer())
+      .post(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Cadete Juan', phone: '+549343700004', role: 'CADETE' })
+      .expect(201);
+    const cadeteLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343700004', password: invite.body.temporaryPassword })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/tenants/${tenant.body.id}/members`)
+      .set('Authorization', `Bearer ${cadeteLogin.body.accessToken}`)
+      .expect(403);
+  });
 });

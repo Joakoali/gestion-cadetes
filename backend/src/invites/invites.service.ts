@@ -77,6 +77,14 @@ export class InvitesService {
     };
   }
 
+  async listPending(tenantId: string) {
+    const invites = await this.prisma.invite.findMany({
+      where: { tenantId, usedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return invites.map((i) => ({ id: i.id, role: i.role, label: i.label, expiresAt: i.expiresAt }));
+  }
+
   private async findValidInviteOrThrow(token: string) {
     const invite = await this.prisma.invite.findUnique({ where: { token } });
     if (!invite || invite.usedAt || invite.expiresAt < new Date()) {

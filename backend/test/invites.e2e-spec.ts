@@ -122,4 +122,34 @@ describe('Invites (e2e)', () => {
       .send({ name: 'Dup', phone: '+549343500009', password: 'secret123' })
       .expect(409);
   });
+
+  it('lists pending invites and excludes used or expired ones', async () => {
+    const adminToken = await registerAndLogin(app, '+549343700005');
+    const tenantId = await createTenant(app, adminToken);
+
+    const invite = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/invites`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ role: 'CADETE', label: 'Cadete Juan' })
+      .expect(201);
+
+    const pendingBefore = await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/invites`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(pendingBefore.body).toHaveLength(1);
+    expect(pendingBefore.body[0].label).toBe('Cadete Juan');
+
+    const token = invite.body.url.split('/').pop() as string;
+    await request(app.getHttpServer())
+      .post(`/invites/${token}/accept`)
+      .send({ name: 'Juan', phone: '+549343700006', password: 'secret123' })
+      .expect(201);
+
+    const pendingAfter = await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/invites`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(pendingAfter.body).toHaveLength(0);
+  });
 });
