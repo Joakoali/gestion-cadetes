@@ -4,21 +4,17 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    expose:
-      - "3000"
-    networks:
-      - gec
+    network_mode: host
 
   cloudflared:
     image: cloudflare/cloudflared:latest
     restart: unless-stopped
-    command: tunnel run
+    # Host networking so it can reach the backend at localhost:3000. A
+    # separate metrics port avoids clashing with the other cloudflared
+    # instance already running on this host (default 127.0.0.1:20241).
+    command: tunnel --metrics 127.0.0.1:20242 run
     environment:
       - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    network_mode: host
     depends_on:
       - backend
-    networks:
-      - gec
-
-networks:
-  gec:
