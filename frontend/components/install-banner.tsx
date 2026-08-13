@@ -23,11 +23,9 @@ export function InstallBanner() {
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    setInstalled(isPwaInstalled());
-  }, []);
-
-  useEffect(() => {
-    if (installed !== true) {
+    const isInstalled = isPwaInstalled();
+    setInstalled(isInstalled);
+    if (!isInstalled) {
       return;
     }
     requestNotificationPermission()
@@ -39,7 +37,7 @@ export function InstallBanner() {
       .catch(() => {
         // best-effort background enhancement, no user-facing UI needed
       });
-  }, [installed]);
+  }, []);
 
   if (installed === null || installed || dismissed) {
     return null;

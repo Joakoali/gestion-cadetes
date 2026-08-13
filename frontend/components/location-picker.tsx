@@ -15,7 +15,7 @@ export interface LocationPickerProps {
 export function LocationPicker({ lat, lng, onChange }: LocationPickerProps) {
   const [geoError, setGeoError] = useState<string | null>(null);
 
-  function useMyLocation() {
+  function handleUseMyLocation() {
     if (!navigator.geolocation) {
       setGeoError('Tu navegador no soporta geolocalización. Marcá el pin manualmente en el mapa.');
       return;
@@ -34,7 +34,7 @@ export function LocationPicker({ lat, lng, onChange }: LocationPickerProps) {
       <LocationPickerMap lat={lat} lng={lng} onChange={onChange} />
       <div className="flex items-center justify-between">
         <p className="text-xs text-muted-foreground">Tocá el mapa para fijar o corregir el pin.</p>
-        <Button type="button" variant="outline" size="sm" onClick={useMyLocation}>
+        <Button type="button" variant="outline" size="sm" onClick={handleUseMyLocation}>
           Usar mi ubicación
         </Button>
       </div>

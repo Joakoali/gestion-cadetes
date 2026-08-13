@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-const schema = z.object({ email: z.string().email('Email inválido') });
+const schema = z.object({ email: z.email('Email inválido') });
 type FormValues = z.infer<typeof schema>;
 
 export default function ForgotPasswordPage() {

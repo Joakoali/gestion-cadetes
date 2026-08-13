@@ -17,7 +17,7 @@ const schema = z.object({
   name: z.string().min(2, 'Ingresá tu nombre'),
   phone: z.string().min(6, 'Ingresá un teléfono válido'),
   password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
-  email: z.string().email('Email inválido').optional().or(z.literal('')),
+  email: z.email('Email inválido').optional().or(z.literal('')),
 });
 type FormValues = z.infer<typeof schema>;
 
