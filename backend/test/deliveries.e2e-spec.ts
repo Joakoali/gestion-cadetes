@@ -376,4 +376,45 @@ describe('Deliveries — create/reassign/cancel (e2e)', () => {
       .expect(200);
     expect(afterComplete.body).toEqual([]);
   });
+
+  it('lists all active deliveries of the tenant for mostrador, including cadete and customer', async () => {
+    const { adminToken, tenantId, cadeteUserId, customerId } =
+      await setupTenantWithCadeteAndCustomer('+54934360');
+
+    await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/deliveries`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ customerRecordId: customerId, cadeteUserId })
+      .expect(201);
+
+    const board = await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/deliveries?status=ASSIGNED`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    expect(board.body).toHaveLength(1);
+    expect(board.body[0].status).toBe('ASSIGNED');
+    expect(board.body[0].customerRecord.name).toBe('Carlos');
+    expect(board.body[0].cadete.id).toBe(cadeteUserId);
+  });
+
+  it('rejects a cadete trying to view the tenant-wide board', async () => {
+    const { adminToken, tenantId } = await setupTenantWithCadeteAndCustomer('+54934362');
+
+    const cadeteInvite = await request(app.getHttpServer())
+      .post(`/tenants/${tenantId}/members`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ name: 'Cadete Board Test', phone: '+549343629', role: 'CADETE' })
+      .expect(201);
+
+    const cadeteLogin = await request(app.getHttpServer())
+      .post('/auth/login')
+      .send({ phone: '+549343629', password: cadeteInvite.body.temporaryPassword })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .get(`/tenants/${tenantId}/deliveries?status=ASSIGNED`)
+      .set('Authorization', `Bearer ${cadeteLogin.body.accessToken}`)
+      .expect(403);
+  });
 });

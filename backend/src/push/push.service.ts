@@ -80,11 +80,12 @@ export class PushService {
   async handleDeliveryAssigned(event: {
     deliveryId: string;
     cadeteUserId: string;
+    tenantId: string;
   }) {
     await this.sendToUser(event.cadeteUserId, {
       title: 'Nueva entrega asignada',
       body: 'Tenés una nueva entrega — abrí la app para ver la dirección.',
-      url: `/deliveries/${event.deliveryId}`,
+      url: `/entregas/${event.deliveryId}?tenantId=${event.tenantId}`,
     });
   }
 }

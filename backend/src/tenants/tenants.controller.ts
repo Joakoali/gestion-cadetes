@@ -29,4 +29,11 @@ export class TenantsController {
   invite(@Param('tenantId') tenantId: string, @Body() dto: InviteMemberDto) {
     return this.tenantsService.inviteMember(tenantId, dto);
   }
+
+  @Get('tenants/:tenantId/members')
+  @UseGuards(TenantMembershipGuard, RolesGuard)
+  @Roles('ADMIN', 'MOSTRADOR')
+  listMembers(@Param('tenantId') tenantId: string) {
+    return this.tenantsService.listMembers(tenantId);
+  }
 }

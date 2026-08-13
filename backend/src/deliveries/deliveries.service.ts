@@ -27,7 +27,11 @@ export class DeliveriesService {
       },
     });
 
-    this.events.emit('delivery.assigned', { deliveryId: delivery.id, cadeteUserId: delivery.cadeteUserId });
+    this.events.emit('delivery.assigned', {
+      deliveryId: delivery.id,
+      cadeteUserId: delivery.cadeteUserId,
+      tenantId,
+    });
     return delivery;
   }
 
@@ -40,7 +44,11 @@ export class DeliveriesService {
       data: { cadeteUserId: dto.cadeteUserId },
     });
 
-    this.events.emit('delivery.assigned', { deliveryId: updated.id, cadeteUserId: updated.cadeteUserId });
+    this.events.emit('delivery.assigned', {
+      deliveryId: updated.id,
+      cadeteUserId: updated.cadeteUserId,
+      tenantId,
+    });
     return updated;
   }
 
@@ -69,6 +77,17 @@ export class DeliveriesService {
     return this.prisma.delivery.findMany({
       where: { tenantId, cadeteUserId, status: 'ASSIGNED' },
       include: { customerRecord: true },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async listForTenant(tenantId: string, status?: 'ASSIGNED' | 'COMPLETED' | 'CANCELLED') {
+    return this.prisma.delivery.findMany({
+      where: { tenantId, status: status ?? 'ASSIGNED' },
+      include: {
+        customerRecord: true,
+        cadete: { select: { id: true, name: true, phone: true } },
+      },
       orderBy: { createdAt: 'asc' },
     });
   }

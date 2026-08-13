@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { TenantsModule } from './tenants/tenants.module';
+import { InvitesModule } from './invites/invites.module';
 import { UsersModule } from './users/users.module';
 import { CustomersModule } from './customers/customers.module';
 import { DeliveriesModule } from './deliveries/deliveries.module';
@@ -21,6 +22,7 @@ import { validate } from './config/env.validation';
     PrismaModule,
     AuthModule,
     TenantsModule,
+    InvitesModule,
     UsersModule,
     CustomersModule,
     DeliveriesModule,

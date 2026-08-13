@@ -23,6 +23,7 @@ model User {
   cadeteDeliveries   Delivery[]       @relation("CadeteDeliveries")
   assignedDeliveries Delivery[]       @relation("AssignedByDeliveries")
   pushSubscriptions  PushSubscription[]
+  passwordResetTokens PasswordResetToken[]
 }
 
 enum Role {
@@ -40,6 +41,21 @@ model Tenant {
   memberships     Membership[]
   customerRecords CustomerRecord[]
   deliveries      Delivery[]
+  invites         Invite[]
+}
+
+model Invite {
+  id        String    @id @default(uuid())
+  tenantId  String
+  role      Role
+  label     String?
+  phone     String?
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 }
 
 model Membership {
@@ -104,6 +120,17 @@ model PushSubscription {
   p256dh    String
   auth      String
   createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String
+  token     String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id])
 }
